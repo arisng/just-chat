@@ -11,7 +11,7 @@ export interface WebhookRequest {
 }
 
 export interface WebhookResponse {
-  response: string;
+	output: string;
 }
 
 export class WebhookService {

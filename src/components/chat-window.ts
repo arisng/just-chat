@@ -303,7 +303,7 @@ export class ChatWindow extends BaseComponent {
 			// Add response message
 			const responseMessage: ChatMessage = {
 				id: crypto.randomUUID(),
-				text: response.response,
+				text: response.output,
 				sender: "backend",
 				timestamp: new Date().toISOString(),
 			};
