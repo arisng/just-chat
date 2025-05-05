@@ -4,7 +4,7 @@
 
 > This repository contains my personal customization of the Just-Chat widget, a lightweight chat solution for websites. I've adapted the original work to better suit my specific needs while maintaining the core functionality and principles of the original project.
 > 
-> Credit goes to the original author, Hoang Kieng (hoang@kieng.io.vn), for creating the foundation of this excellent chat widget. The original repository can be found at [https://github.com/draphonix/just-chat](https://github.com/draphonix/just-chat).
+> Credit goes to the original author, Hoang Kieng (hoang@arisng.io.vn), for creating the foundation of this excellent chat widget. The original repository can be found at [https://github.com/draphonix/just-chat](https://github.com/draphonix/just-chat).
 > 
 > My customizations focus on enhancing specific features while preserving the lightweight nature of the original implementation. This README documents both the original functionality and my additions.
 
@@ -31,7 +31,7 @@ A lightweight, customizable chat widget that can be easily embedded into any web
 
 ```html
 <!-- Latest version -->
-<script src="https://cdn.jsdelivr.net/npm/@kieng/just-chat/dist/just-chat.umd.js"
+<script src="https://cdn.jsdelivr.net/npm/@arisng/just-chat/dist/just-chat.umd.js"
         data-webhook-url="https://your-backend.com/chat"
         data-theme-color="#1E40AF"
         data-position="bottom-right"
@@ -43,7 +43,7 @@ A lightweight, customizable chat widget that can be easily embedded into any web
 </script>
 
 <!-- Specific version -->
-<script src="https://cdn.jsdelivr.net/npm/@kieng/just-chat@0.1.2/dist/just-chat.umd.js"
+<script src="https://cdn.jsdelivr.net/npm/@arisng/just-chat@0.1.2/dist/just-chat.umd.js"
         data-webhook-url="https://your-backend.com/chat"
         defer>
 </script>
@@ -53,17 +53,17 @@ A lightweight, customizable chat widget that can be easily embedded into any web
 
 ```bash
 # Using npm
-npm install @kieng/just-chat
+npm install @arisng/just-chat
 
 # Using pnpm
-pnpm add @kieng/just-chat
+pnpm add @arisng/just-chat
 
 # Using yarn
-yarn add @kieng/just-chat
+yarn add @arisng/just-chat
 ```
 
 ```javascript
-import { initChatPopup } from '@kieng/just-chat';
+import { initChatPopup } from '@arisng/just-chat';
 
 initChatPopup({
   webhookUrl: 'https://your-backend.com/chat',
@@ -240,7 +240,7 @@ MIT
 ## Support
 
 - GitHub Issues: [Report a bug](https://github.com/draphonix/just-chat/issues)
-- Email: hoang@kieng.io.vn
+- Email: nda1291@outlook.com
 
 ## Credits
 
