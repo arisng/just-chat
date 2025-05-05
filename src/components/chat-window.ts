@@ -1,13 +1,20 @@
-import { BaseComponent } from './base-component';
-import { StorageService, ChatMessage } from '../services/storage';
-import { WebhookService } from '../services/webhook';
+import { BaseComponent } from "./base-component";
+import { StorageService, ChatMessage } from "../services/storage";
+import { WebhookService } from "../services/webhook";
 
 export class ChatWindow extends BaseComponent {
-  static get observedAttributes() {
-    return ['webhook-url', 'title', 'welcome-message', 'history-enabled', 'history-clear-button', 'position'];
-  }
+	static get observedAttributes() {
+		return [
+			"webhook-url",
+			"title",
+			"welcome-message",
+			"history-enabled",
+			"history-clear-button",
+			"position",
+		];
+	}
 
-  private styles = `
+	private styles = `
     .chat-window {
       position: absolute;
       bottom: 80px;
@@ -165,259 +172,270 @@ export class ChatWindow extends BaseComponent {
     }
   `;
 
-  private isOpen = false;
-  private storage: StorageService;
-  private webhook: WebhookService;
-  private sessionId: string;
-  private hasShownWelcomeMessage = false;
+	private isOpen = false;
+	private storage: StorageService;
+	private webhook: WebhookService;
+	private sessionId: string;
+	private hasShownWelcomeMessage = false;
 
-  constructor() {
-    super();
-    const webhookUrl = this.getAttribute('webhook-url') || '';
-    this.storage = new StorageService(webhookUrl);
-    this.webhook = new WebhookService(webhookUrl);
-    this.sessionId = crypto.randomUUID();
-    this.addStyles(this.styles);
-    this.render();
-  }
+	constructor() {
+		super();
+		const webhookUrl = this.getAttribute("webhook-url") || "";
+		this.storage = new StorageService(webhookUrl);
+		this.webhook = new WebhookService(webhookUrl);
+		this.sessionId = crypto.randomUUID();
+		this.addStyles(this.styles);
+		this.render();
+	}
 
-  protected render(): void {
-    const window = this.createElement('div', 'chat-window');
-    
-    // Header
-    const header = this.createElement('div', 'header');
-    const title = this.createElement('h2', '', this.getAttribute('title') || 'Chat with us');
-    const headerActions = this.createElement('div', 'header-actions');
-    
-    if (this.getAttribute('history-enabled') !== 'false' && 
-        this.getAttribute('history-clear-button') !== 'false') {
-      const clearBtn = this.createElement('button', '', '🗑️');
-      clearBtn.title = 'Clear history';
-      clearBtn.addEventListener('click', () => this.clearHistory());
-      headerActions.appendChild(clearBtn);
-    }
-    
-    const closeBtn = this.createElement('button', '', '✕');
-    closeBtn.addEventListener('click', () => this.close());
-    headerActions.appendChild(closeBtn);
-    
-    header.appendChild(title);
-    header.appendChild(headerActions);
-    
-    // Messages area
-    const messages = this.createElement('div', 'messages');
-    
-    // Load existing messages
-    if (this.getAttribute('history-enabled') !== 'false') {
-      const existingMessages = this.storage.getMessages();
-      existingMessages.forEach(msg => this.renderMessage(msg, messages));
-    }
-    
-    // Input area
-    const inputArea = this.createElement('div', 'input-area');
-    const input = this.createElement('input') as HTMLInputElement;
-    input.type = 'text';
-    input.placeholder = 'Type your message...';
-    
-    const sendBtn = this.createElement('button', '', 'Send');
-    const handleSend = () => {
-      const text = input.value.trim();
-      if (text) {
-        this.sendMessage(text);
-        input.value = '';
-      }
-    };
-    
-    sendBtn.addEventListener('click', handleSend);
-    input.addEventListener('keypress', (e) => {
-      if (e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault();
-        handleSend();
-      }
-    });
-    
-    inputArea.appendChild(input);
-    inputArea.appendChild(sendBtn);
-    
-    window.appendChild(header);
-    window.appendChild(messages);
-    window.appendChild(inputArea);
-    
-    this.shadow.innerHTML = '';
-    this.shadow.appendChild(window);
+	protected render(): void {
+		const window = this.createElement("div", "chat-window");
 
-    // Show welcome message only if it hasn't been shown yet and the chat is being opened
-    const welcomeMessage = this.getAttribute('welcome-message');
-    if (welcomeMessage && !this.hasShownWelcomeMessage && this.isOpen) {
-      this.addSystemMessage(welcomeMessage);
-      this.hasShownWelcomeMessage = true;
-    }
-  }
+		// Header
+		const header = this.createElement("div", "header");
+		const title = this.createElement(
+			"h2",
+			"",
+			this.getAttribute("title") || "Chat with us"
+		);
+		const headerActions = this.createElement("div", "header-actions");
 
-  private async sendMessage(text: string) {
-    const messageId = crypto.randomUUID();
-    const timestamp = new Date().toISOString();
-    
-    const message: ChatMessage = {
-      id: messageId,
-      text,
-      sender: 'user',
-      timestamp,
-      status: 'sending'
-    };
+		if (
+			this.getAttribute("history-enabled") !== "false" &&
+			this.getAttribute("history-clear-button") !== "false"
+		) {
+			const clearBtn = this.createElement("button", "", "🗑️");
+			clearBtn.title = "Clear history";
+			clearBtn.addEventListener("click", () => this.clearHistory());
+			headerActions.appendChild(clearBtn);
+		}
 
-    // Add message to UI and storage
-    this.storage.addMessage(message);
-    this.renderMessage(message);
+		const closeBtn = this.createElement("button", "", "✕");
+		closeBtn.addEventListener("click", () => this.close());
+		headerActions.appendChild(closeBtn);
 
-    try {
-      // Send to webhook
-      const response = await this.webhook.sendMessage({
-        message: text,
-        timestamp,
-        sessionId: this.sessionId,
-        context: {
-          url: window.location.href
-        },
-        history: this.storage.getMessages().slice(-10) // Send last 10 messages
-      });
+		header.appendChild(title);
+		header.appendChild(headerActions);
 
-      // Update message status
-      message.status = 'sent';
-      this.storage.updateMessage(messageId, { status: 'sent' });
-      this.updateMessageStatus(messageId, 'sent');
+		// Messages area
+		const messages = this.createElement("div", "messages");
 
-      // Add response message
-      const responseMessage: ChatMessage = {
-        id: crypto.randomUUID(),
-        text: response.response,
-        sender: 'backend',
-        timestamp: new Date().toISOString()
-      };
-      
-      this.storage.addMessage(responseMessage);
-      this.renderMessage(responseMessage);
+		// Load existing messages
+		if (this.getAttribute("history-enabled") !== "false") {
+			const existingMessages = this.storage.getMessages();
+			existingMessages.forEach((msg) => this.renderMessage(msg, messages));
+		}
 
-    } catch (error) {
-      if (error instanceof Error && error.message === 'Request cancelled') {
-        message.status = 'cancelled';
-        this.storage.updateMessage(messageId, { status: 'cancelled' });
-        this.updateMessageStatus(messageId, 'cancelled');
-      } else {
-        message.status = 'error';
-        this.storage.updateMessage(messageId, { status: 'error' });
-        this.updateMessageStatus(messageId, 'error');
-        this.addSystemMessage('Failed to send message. Please try again.');
-      }
-    }
-  }
+		// Input area
+		const inputArea = this.createElement("div", "input-area");
+		const input = this.createElement("input") as HTMLInputElement;
+		input.type = "text";
+		input.placeholder = "Type your message...";
 
-  private renderMessage(message: ChatMessage, container?: HTMLElement) {
-    const messages = container || this.shadow.querySelector('.messages');
-    if (!messages) return;
+		const sendBtn = this.createElement("button", "", "Send");
+		const handleSend = () => {
+			const text = input.value.trim();
+			if (text) {
+				this.sendMessage(text);
+				input.value = "";
+			}
+		};
 
-    const messageEl = this.createElement('div', `message ${message.sender}`);
-    messageEl.textContent = message.text;
-    messageEl.dataset.messageId = message.id;
+		sendBtn.addEventListener("click", handleSend);
+		input.addEventListener("keypress", (e) => {
+			if (e.key === "Enter" && !e.shiftKey) {
+				e.preventDefault();
+				handleSend();
+			}
+		});
 
-    if (message.sender === 'user' && message.status) {
-      const statusEl = this.createElement('div', 'message-status');
-      statusEl.textContent = message.status;
-      
-      if (message.status === 'sending') {
-        const cancelBtn = this.createElement('button', 'cancel-button', 'Cancel');
-        cancelBtn.addEventListener('click', () => {
-          this.webhook.cancelRequest();
-        });
-        statusEl.appendChild(cancelBtn);
-      }
-      
-      messageEl.appendChild(statusEl);
-    }
+		inputArea.appendChild(input);
+		inputArea.appendChild(sendBtn);
 
-    messages.appendChild(messageEl);
-    messages.scrollTop = messages.scrollHeight;
-  }
+		window.appendChild(header);
+		window.appendChild(messages);
+		window.appendChild(inputArea);
 
-  private updateMessageStatus(messageId: string, status: string) {
-    const messageEl = this.shadow.querySelector(`[data-message-id="${messageId}"]`);
-    if (messageEl) {
-      const statusEl = messageEl.querySelector('.message-status');
-      if (statusEl) {
-        statusEl.textContent = status;
-      }
-    }
-  }
+		this.shadow.innerHTML = "";
+		this.shadow.appendChild(window);
 
-  private clearHistory() {
-    if (confirm('Are you sure you want to clear the chat history?')) {
-      this.storage.clearHistory();
-      const messages = this.shadow.querySelector('.messages');
-      if (messages) {
-        messages.innerHTML = '';
-      }
-      // Reset welcome message flag when history is cleared
-      this.hasShownWelcomeMessage = false;
-    }
-  }
+		// Show welcome message only if it hasn't been shown yet and the chat is being opened
+		const welcomeMessage = this.getAttribute("welcome-message");
+		if (welcomeMessage && !this.hasShownWelcomeMessage && this.isOpen) {
+			this.addSystemMessage(welcomeMessage);
+			this.hasShownWelcomeMessage = true;
+		}
+	}
 
-  private addSystemMessage(text: string) {
-    const message: ChatMessage = {
-      id: crypto.randomUUID(),
-      text,
-      sender: 'system',
-      timestamp: new Date().toISOString()
-    };
-    
-    if (this.getAttribute('history-enabled') !== 'false') {
-      this.storage.addMessage(message);
-    }
-    
-    this.renderMessage(message);
-  }
+	private async sendMessage(text: string) {
+		const messageId = crypto.randomUUID();
+		const timestamp = new Date().toISOString();
 
-  private close() {
-    this.isOpen = false;
-    this.updateVisibility();
-    this.dispatchEvent(new CustomEvent('close'));
-  }
+		const message: ChatMessage = {
+			id: messageId,
+			text,
+			sender: "user",
+			timestamp,
+			status: "sending",
+		};
 
-  public setOpen(open: boolean) {
-    this.isOpen = open;
-    this.updateVisibility();
-    
-    // If opening the chat and no messages exist, show welcome message
-    if (open && !this.hasShownWelcomeMessage) {
-      const welcomeMessage = this.getAttribute('welcome-message');
-      if (welcomeMessage) {
-        this.addSystemMessage(welcomeMessage);
-        this.hasShownWelcomeMessage = true;
-      }
-    }
-  }
+		// Add message to UI and storage
+		this.storage.addMessage(message);
+		this.renderMessage(message);
 
-  private updateVisibility() {
-    const window = this.shadow.querySelector('.chat-window');
-    if (window) {
-      if (this.isOpen) {
-        window.classList.add('open');
-      } else {
-        window.classList.remove('open');
-      }
-    }
-  }
+		try {
+			// Send to webhook
+			const response = await this.webhook.sendMessage({
+				message: text,
+				timestamp,
+				sessionId: this.sessionId,
+				context: {
+					url: window.location.href,
+				},
+				history: this.storage.getMessages().slice(-10), // Send last 10 messages
+			});
 
-  attributeChangedCallback(name: string, oldValue: string, newValue: string) {
-    if (oldValue !== newValue) {
-      if (name === 'webhook-url') {
-        const webhookUrl = newValue || '';
-        this.storage = new StorageService(webhookUrl);
-        this.webhook = new WebhookService(webhookUrl);
-      }
-      // Re-render to update all attributes
-      this.render();
-    }
-  }
+			// Update message status
+			message.status = "sent";
+			this.storage.updateMessage(messageId, { status: "sent" });
+			this.updateMessageStatus(messageId, "sent");
+
+			// Add response message
+			const responseMessage: ChatMessage = {
+				id: crypto.randomUUID(),
+				text: response.response,
+				sender: "backend",
+				timestamp: new Date().toISOString(),
+			};
+
+			this.storage.addMessage(responseMessage);
+			this.renderMessage(responseMessage);
+		} catch (error) {
+			if (error instanceof Error && error.message === "Request cancelled") {
+				message.status = "cancelled";
+				this.storage.updateMessage(messageId, { status: "cancelled" });
+				this.updateMessageStatus(messageId, "cancelled");
+			} else {
+				message.status = "error";
+				this.storage.updateMessage(messageId, { status: "error" });
+				this.updateMessageStatus(messageId, "error");
+				this.addSystemMessage("Failed to send message. Please try again.");
+			}
+		}
+	}
+
+	private renderMessage(message: ChatMessage, container?: HTMLElement) {
+		const messages = container || this.shadow.querySelector(".messages");
+		if (!messages) return;
+
+		const messageEl = this.createElement("div", `message ${message.sender}`);
+		messageEl.textContent = message.text;
+		messageEl.dataset.messageId = message.id;
+
+		if (message.sender === "user" && message.status) {
+			const statusEl = this.createElement("div", "message-status");
+			statusEl.textContent = message.status;
+
+			if (message.status === "sending") {
+				const cancelBtn = this.createElement(
+					"button",
+					"cancel-button",
+					"Cancel"
+				);
+				cancelBtn.addEventListener("click", () => {
+					this.webhook.cancelRequest();
+				});
+				statusEl.appendChild(cancelBtn);
+			}
+
+			messageEl.appendChild(statusEl);
+		}
+
+		messages.appendChild(messageEl);
+		messages.scrollTop = messages.scrollHeight;
+	}
+
+	private updateMessageStatus(messageId: string, status: string) {
+		const messageEl = this.shadow.querySelector(
+			`[data-message-id="${messageId}"]`
+		);
+		if (messageEl) {
+			const statusEl = messageEl.querySelector(".message-status");
+			if (statusEl) {
+				statusEl.textContent = status;
+			}
+		}
+	}
+
+	private clearHistory() {
+		if (confirm("Are you sure you want to clear the chat history?")) {
+			this.storage.clearHistory();
+			const messages = this.shadow.querySelector(".messages");
+			if (messages) {
+				messages.innerHTML = "";
+			}
+			// Reset welcome message flag when history is cleared
+			this.hasShownWelcomeMessage = false;
+		}
+	}
+
+	private addSystemMessage(text: string) {
+		const message: ChatMessage = {
+			id: crypto.randomUUID(),
+			text,
+			sender: "system",
+			timestamp: new Date().toISOString(),
+		};
+
+		if (this.getAttribute("history-enabled") !== "false") {
+			this.storage.addMessage(message);
+		}
+
+		this.renderMessage(message);
+	}
+
+	private close() {
+		this.isOpen = false;
+		this.updateVisibility();
+		this.dispatchEvent(new CustomEvent("close"));
+	}
+
+	public setOpen(open: boolean) {
+		this.isOpen = open;
+		this.updateVisibility();
+
+		// If opening the chat and no messages exist, show welcome message
+		if (open && !this.hasShownWelcomeMessage) {
+			const welcomeMessage = this.getAttribute("welcome-message");
+			if (welcomeMessage) {
+				this.addSystemMessage(welcomeMessage);
+				this.hasShownWelcomeMessage = true;
+			}
+		}
+	}
+
+	private updateVisibility() {
+		const window = this.shadow.querySelector(".chat-window");
+		if (window) {
+			if (this.isOpen) {
+				window.classList.add("open");
+			} else {
+				window.classList.remove("open");
+			}
+		}
+	}
+
+	attributeChangedCallback(name: string, oldValue: string, newValue: string) {
+		if (oldValue !== newValue) {
+			if (name === "webhook-url") {
+				const webhookUrl = newValue || "";
+				this.storage = new StorageService(webhookUrl);
+				this.webhook = new WebhookService(webhookUrl);
+			}
+			// Re-render to update all attributes
+			this.render();
+		}
+	}
 }
 
-customElements.define('chat-window', ChatWindow);
+customElements.define("chat-window", ChatWindow);
