@@ -1,5 +1,13 @@
 # Universal Chat Popup
 
+## Introduction
+
+> This repository contains my personal customization of the Just-Chat widget, a lightweight chat solution for websites. I've adapted the original work to better suit my specific needs while maintaining the core functionality and principles of the original project.
+> 
+> Credit goes to the original author, Hoang Kieng (hoang@kieng.io.vn), for creating the foundation of this excellent chat widget. The original repository can be found at [https://github.com/draphonix/just-chat](https://github.com/draphonix/just-chat).
+> 
+> My customizations focus on enhancing specific features while preserving the lightweight nature of the original implementation. This README documents both the original functionality and my additions.
+
 A lightweight, customizable chat widget that can be easily embedded into any website. Built with Web Components for maximum compatibility and style isolation.
 
 ## Features
