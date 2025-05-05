@@ -105,6 +105,7 @@ export class ChatWindow extends BaseComponent {
       align-self: flex-start;
       background-color: #f0f0f0;
       color: #333;
+      white-space: break-spaces;
     }
 
     .message.system {
