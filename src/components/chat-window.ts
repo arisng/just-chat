@@ -80,11 +80,17 @@ export class ChatWindow extends BaseComponent {
 
     .messages {
       flex: 1;
+      /* Add max-height and overflow-y */
+      max-height: calc(100% - 120px); /* Adjust based on header/input height */
       overflow-y: auto;
       padding: 16px;
       display: flex;
       flex-direction: column;
       gap: 8px;
+      /* Ensure it can receive focus */
+      outline: none;
+      /* Prevent smooth scrolling on the body when scrolling messages */
+      overscroll-behavior: contain;
     }
 
     .message {
@@ -220,6 +226,14 @@ export class ChatWindow extends BaseComponent {
 
 		// Messages area
 		const messages = this.createElement("div", "messages");
+		// Make it focusable programmatically
+		messages.tabIndex = -1;
+
+		// Add wheel event listener to stop propagation
+		messages.addEventListener("wheel", (e) => {
+			// Prevent the event from bubbling up to the body
+			e.stopPropagation();
+		});
 
 		// Load existing messages
 		if (this.getAttribute("history-enabled") !== "false") {
@@ -398,18 +412,49 @@ export class ChatWindow extends BaseComponent {
 	private close() {
 		this.isOpen = false;
 		this.updateVisibility();
+		// Remove class from body when closing
+		document.body.classList.remove("chat-window-open");
 		this.dispatchEvent(new CustomEvent("close"));
 	}
 
 	public setOpen(open: boolean) {
+		const previouslyOpen = this.isOpen;
 		this.isOpen = open;
 		this.updateVisibility();
 
-		// If opening the chat and no messages exist, show welcome message
-		if (open && !this.hasShownWelcomeMessage) {
+		// Add/remove class from body
+		if (open) {
+			document.body.classList.add("chat-window-open");
+			// Focus the messages container when opening
+			// Use requestAnimationFrame to ensure the element is visible and focusable
+			requestAnimationFrame(() => {
+				const messagesContainer = this.shadow.querySelector(
+					".messages"
+				) as HTMLElement;
+				if (messagesContainer) {
+					messagesContainer.focus();
+					// Scroll to bottom when opening
+					messagesContainer.scrollTop = messagesContainer.scrollHeight;
+				}
+			});
+		} else {
+			document.body.classList.remove("chat-window-open");
+		}
+
+		// If opening the chat for the first time (or after history clear) and no messages exist, show welcome message
+		if (open && !previouslyOpen && !this.hasShownWelcomeMessage) {
 			const welcomeMessage = this.getAttribute("welcome-message");
-			if (welcomeMessage) {
+			const messagesContainer = this.shadow.querySelector(".messages");
+			// Check if messages container is empty before adding welcome message
+			if (
+				welcomeMessage &&
+				messagesContainer &&
+				messagesContainer.children.length === 0
+			) {
 				this.addSystemMessage(welcomeMessage);
+				this.hasShownWelcomeMessage = true;
+			} else if (messagesContainer && messagesContainer.children.length > 0) {
+				// If messages already exist (e.g., from history), mark welcome message as shown
 				this.hasShownWelcomeMessage = true;
 			}
 		}

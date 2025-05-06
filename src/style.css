@@ -30,6 +30,11 @@ body {
   min-height: 100vh;
 }
 
+/* Prevent body scroll when chat window is open */
+body.chat-window-open {
+  overflow: hidden;
+}
+
 h1 {
   font-size: 3.2em;
   line-height: 1.1;
