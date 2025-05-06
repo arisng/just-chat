@@ -1,7 +1,7 @@
 {
   "name": "@arisng/just-chat",
   "private": false,
-  "version": "0.1.5",
+  "version": "0.1.6",
   "type": "module",
   "main": "dist/just-chat.umd.js",
   "module": "dist/just-chat.es.js",
